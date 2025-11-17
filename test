@@ -5,17 +5,18 @@ EzHub.__index = EzHub
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 local LOCAL_PLAYER = Players.LocalPlayer
 
---// Small helpers
+--// Helpers
 local function create(className, props, children)
     local obj = Instance.new(className)
     for k, v in pairs(props or {}) do
         obj[k] = v
     end
-    for _, child in ipairs(children or {}) do
-        child.Parent = obj
+    for _, c in ipairs(children or {}) do
+        c.Parent = obj
     end
     return obj
 end
@@ -33,25 +34,21 @@ local function tween(obj, info, props)
 end
 
 local function makeDraggable(handle, dragObject)
-    local dragging = false
-    local dragStart, startPos
-
+    local dragging, dragStart, startPos
     handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = dragObject.Position
         end
     end)
-
     handle.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = false
         end
     end)
-
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
             dragObject.Position = UDim2.new(
                 startPos.X.Scale,
@@ -63,19 +60,18 @@ local function makeDraggable(handle, dragObject)
     end)
 end
 
---// Themes (poprawione ColorSequence.new)
+--// Themes
 local Themes = {
     GlassDark = {
         Name = "GlassDark",
-        Background = Color3.fromRGB(15, 15, 24),
-        Background2 = Color3.fromRGB(32, 32, 50),
+        Background = Color3.fromRGB(16, 16, 24),
         Panel = Color3.fromRGB(26, 26, 40),
-        Panel2 = Color3.fromRGB(38, 38, 60),
-        Accent = Color3.fromRGB(110, 130, 255),
-        Accent2 = Color3.fromRGB(210, 100, 255),
+        Panel2 = Color3.fromRGB(36, 36, 58),
+        Accent = Color3.fromRGB(120, 140, 255),
+        Accent2 = Color3.fromRGB(215, 120, 255),
         Text = Color3.fromRGB(235, 235, 255),
-        TextMuted = Color3.fromRGB(150, 150, 180),
-        Stroke = Color3.fromRGB(70, 70, 110),
+        TextMuted = Color3.fromRGB(150, 150, 185),
+        Stroke = Color3.fromRGB(70, 70, 120),
         Danger = Color3.fromRGB(255, 90, 130),
         Success = Color3.fromRGB(0, 210, 140),
         BackgroundGradient = {
@@ -89,7 +85,6 @@ local Themes = {
     GlassLight = {
         Name = "GlassLight",
         Background = Color3.fromRGB(242, 244, 255),
-        Background2 = Color3.fromRGB(230, 235, 255),
         Panel = Color3.fromRGB(252, 252, 255),
         Panel2 = Color3.fromRGB(240, 243, 255),
         Accent = Color3.fromRGB(90, 110, 255),
@@ -109,14 +104,13 @@ local Themes = {
     },
     Neon = {
         Name = "Neon",
-        Background = Color3.fromRGB(5, 5, 10),
-        Background2 = Color3.fromRGB(10, 10, 20),
-        Panel = Color3.fromRGB(14, 14, 30),
-        Panel2 = Color3.fromRGB(22, 22, 48),
+        Background = Color3.fromRGB(4, 6, 12),
+        Panel = Color3.fromRGB(14, 16, 32),
+        Panel2 = Color3.fromRGB(26, 28, 54),
         Accent = Color3.fromRGB(0, 255, 200),
         Accent2 = Color3.fromRGB(190, 70, 255),
         Text = Color3.fromRGB(230, 255, 255),
-        TextMuted = Color3.fromRGB(120, 160, 160),
+        TextMuted = Color3.fromRGB(120, 160, 170),
         Stroke = Color3.fromRGB(0, 90, 90),
         Danger = Color3.fromRGB(255, 60, 120),
         Success = Color3.fromRGB(0, 220, 140),
@@ -136,15 +130,14 @@ local DefaultIconMap = {
     home = "rbxassetid://0",
     settings = "rbxassetid://0",
     user = "rbxassetid://0",
-    ["mouse-pointer"] = "rbxassetid://0",
     zap = "rbxassetid://0",
+    monitor = "rbxassetid://0",
 }
-
 local function defaultIconProvider(name)
     return DefaultIconMap[name] or ""
 end
 
---// ScreenGui + notifications
+--// ScreenGui + notification root + open button root
 local function getScreenGui()
     local pg = LOCAL_PLAYER:WaitForChild("PlayerGui")
     local gui = pg:FindFirstChild("EzHubUI")
@@ -167,59 +160,69 @@ local function getNotificationRoot()
         root = create("Frame", {
             Name = "EzHubNotifications",
             Parent = gui,
-            AnchorPoint = Vector2.new(1, 0.5),
-            Position = UDim2.new(1, -20, 0.5, 0),
-            Size = UDim2.new(0, 320, 1, -40),
+            AnchorPoint = Vector2.new(1, 0),
+            Position = UDim2.new(1, -20, 0, 60),
+            Size = UDim2.new(0, 260, 0.8, 0),
             BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-        })
-
-        create("UIListLayout", {
-            Parent = root,
-            FillDirection = Enum.FillDirection.Vertical,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 8),
-            VerticalAlignment = Enum.VerticalAlignment.Center,
+        }, {
+            create("UIListLayout", {
+                FillDirection = Enum.FillDirection.Vertical,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 6),
+                VerticalAlignment = Enum.VerticalAlignment.Top,
+            })
         })
     end
     return root
 end
 
---// Player profile (bottom-left of window side menu)
-local function createProfilePanel(parent, theme)
-    local panelHeight = 70
+local function getOpenButtonRoot()
+    local gui = getScreenGui()
+    local root = gui:FindFirstChild("EzHubOpenButtons")
+    if not root then
+        root = create("Frame", {
+            Name = "EzHubOpenButtons",
+            Parent = gui,
+            AnchorPoint = Vector2.new(0, 1),
+            Position = UDim2.new(0, 20, 1, -20),
+            Size = UDim2.new(0, 320, 0, 60),
+            BackgroundTransparency = 1,
+        })
+    end
+    return root
+end
 
-    local frame = create("Frame", {
+--// Player profile card (we'll put it bottom-left in content)
+local function createProfileCard(parent, theme)
+    local card = create("Frame", {
         Parent = parent,
         AnchorPoint = Vector2.new(0, 1),
         Position = UDim2.new(0, 8, 1, -8),
-        Size = UDim2.new(1, -16, 0, panelHeight),
+        Size = UDim2.new(0, 220, 0, 58),
         BackgroundColor3 = theme.Panel,
         BorderSizePixel = 0,
     })
-
-    create("UICorner", {Parent = frame, CornerRadius = UDim.new(0, 10)})
+    create("UICorner", {Parent = card, CornerRadius = UDim.new(0, 12)})
     create("UIStroke", {
-        Parent = frame,
+        Parent = card,
         Color = theme.Stroke,
         Transparency = 0.6,
     })
 
     local avatar = create("ImageLabel", {
-        Parent = frame,
+        Parent = card,
         BackgroundTransparency = 1,
-        Size = UDim2.new(0, 48, 0, 48),
-        Position = UDim2.new(0, 10, 0.5, -24),
+        Position = UDim2.new(0, 8, 0.5, -18),
+        Size = UDim2.new(0, 36, 0, 36),
         Image = "",
     })
-
     create("UICorner", {Parent = avatar, CornerRadius = UDim.new(1, 0)})
 
     local nameLabel = create("TextLabel", {
-        Parent = frame,
+        Parent = card,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 68, 0, 10),
-        Size = UDim2.new(1, -80, 0, 18),
+        Position = UDim2.new(0, 52, 0, 6),
+        Size = UDim2.new(1, -60, 0, 20),
         Font = Enum.Font.GothamBold,
         Text = LOCAL_PLAYER.Name,
         TextColor3 = theme.Text,
@@ -228,10 +231,10 @@ local function createProfilePanel(parent, theme)
     })
 
     local subLabel = create("TextLabel", {
-        Parent = frame,
+        Parent = card,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 68, 0, 30),
-        Size = UDim2.new(1, -80, 0, 16),
+        Position = UDim2.new(0, 52, 0, 26),
+        Size = UDim2.new(1, -60, 0, 16),
         Font = Enum.Font.Gotham,
         Text = "UserId: " .. LOCAL_PLAYER.UserId,
         TextColor3 = theme.TextMuted,
@@ -241,7 +244,7 @@ local function createProfilePanel(parent, theme)
 
     task.spawn(function()
         local ok, thumb = pcall(function()
-            local url = Players:GetUserThumbnailAsync(
+            local url, _ = Players:GetUserThumbnailAsync(
                 LOCAL_PLAYER.UserId,
                 Enum.ThumbnailType.HeadShot,
                 Enum.ThumbnailSize.Size100x100
@@ -253,10 +256,10 @@ local function createProfilePanel(parent, theme)
         end
     end)
 
-    return frame, panelHeight
+    return card
 end
 
---// Object classes
+--// Objects
 local Window = {}
 Window.__index = Window
 
@@ -266,7 +269,7 @@ Tab.__index = Tab
 local Section = {}
 Section.__index = Section
 
---// singleton instance (exported)
+-- singleton
 local singleton = setmetatable({
     _themeName = "GlassDark",
     _theme = cloneTheme(Themes.GlassDark),
@@ -274,7 +277,7 @@ local singleton = setmetatable({
     _windows = {},
 }, EzHub)
 
---// EzHub API: Themes & Icons
+--// THEME & ICON API
 function EzHub:SetTheme(nameOrTable)
     if type(nameOrTable) == "string" then
         local base = Themes[nameOrTable]
@@ -290,12 +293,12 @@ function EzHub:SetTheme(nameOrTable)
     end
 end
 
-function EzHub:RegisterTheme(name, def)
-    Themes[name] = def
-end
-
 function EzHub:GetTheme()
     return self._theme
+end
+
+function EzHub:RegisterTheme(name, def)
+    Themes[name] = def
 end
 
 function EzHub:SetIconProvider(fn)
@@ -304,20 +307,129 @@ function EzHub:SetIconProvider(fn)
     end
 end
 
---// EzHub:CreateWindow
--- opts:
---   Title        - główny tytuł UI (np. EzHub)
---   SubTitle     - opis, np. "Modern Script Hub"
---   GameName     - nazwa gry, pojawi się jako badge
---   CreatorName  - autor UI / huba
---   AppIcon      - nazwa lucide lub rbxassetid://...
---   Theme        - GlassDark / GlassLight / Neon / ...
+--// NOTIFICATIONS (WindUI-like API)
+-- EzHub:Notify({ Title, Content, Duration, Icon, IconThemed? })
+function EzHub:Notify(opts)
+    opts = opts or {}
+    local theme = self._theme
+    local root = getNotificationRoot()
+
+    local title = opts.Title or "Notification"
+    local content = opts.Content or opts.Description or ""
+    local duration = tonumber(opts.Duration) or 5
+    local iconId = ""
+    if typeof(opts.Icon) == "string" then
+        if opts.Icon:match("^rbxassetid://") then
+            iconId = opts.Icon
+        else
+            iconId = self._iconProvider(opts.Icon) or ""
+        end
+    end
+
+    local frame = create("Frame", {
+        Parent = root,
+        BackgroundColor3 = theme.Panel2,
+        BorderSizePixel = 0,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, 0, 0, 0),
+    })
+    create("UICorner", {Parent = frame, CornerRadius = UDim.new(0, 10)})
+    create("UIStroke", {
+        Parent = frame,
+        Color = theme.Stroke,
+        Transparency = 0.4,
+    })
+    create("UIPadding", {
+        Parent = frame,
+        PaddingTop = UDim.new(0, 8),
+        PaddingBottom = UDim.new(0, 8),
+        PaddingLeft = UDim.new(0, 10),
+        PaddingRight = UDim.new(0, 10),
+    })
+
+    local layout = create("UIListLayout", {
+        Parent = frame,
+        FillDirection = Enum.FillDirection.Horizontal,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 6),
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+    })
+
+    if iconId ~= "" then
+        create("ImageLabel", {
+            Parent = frame,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 20, 0, 20),
+            Image = iconId,
+            ImageColor3 = opts.IconThemed and theme.Accent or Color3.new(1,1,1),
+        })
+    end
+
+    local textHolder = create("Frame", {
+        Parent = frame,
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, -24, 0, 0),
+    })
+    create("UIListLayout", {
+        Parent = textHolder,
+        FillDirection = Enum.FillDirection.Vertical,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 2),
+    })
+
+    create("TextLabel", {
+        Parent = textHolder,
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, 0, 0, 0),
+        Font = Enum.Font.GothamBold,
+        Text = title,
+        TextColor3 = theme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+
+    create("TextLabel", {
+        Parent = textHolder,
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, 0, 0, 0),
+        Font = Enum.Font.Gotham,
+        Text = content,
+        TextColor3 = theme.TextMuted,
+        TextSize = 12,
+        TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+
+    -- enter animation
+    frame.BackgroundTransparency = 1
+    frame.Position = UDim2.new(0, 30, 0, 0)
+    tween(frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundTransparency = 0,
+        Position = UDim2.new(0, 0, 0, 0),
+    })
+
+    task.spawn(function()
+        task.wait(duration)
+        tween(frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 30, 0, 0),
+        })
+        task.wait(0.22)
+        if frame and frame.Parent then
+            frame:Destroy()
+        end
+    end)
+end
+
+--// WINDOW CREATION
 function EzHub:CreateWindow(opts)
     opts = opts or {}
     if opts.Theme then
         self:SetTheme(opts.Theme)
     end
-
     local theme = self._theme
     local gui = getScreenGui()
 
@@ -325,19 +437,16 @@ function EzHub:CreateWindow(opts)
         Parent = gui,
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(0, 700, 0, 390),
+        Size = UDim2.new(0, 680, 0, 360),
         BackgroundColor3 = theme.Background,
         BorderSizePixel = 0,
     })
-
-    create("UICorner", {Parent = main, CornerRadius = UDim.new(0, 18)})
+    create("UICorner", {Parent = main, CornerRadius = UDim.new(0, 16)})
     create("UIStroke", {
         Parent = main,
         Color = theme.Stroke,
         Transparency = 0.4,
-        Thickness = 1,
     })
-
     if theme.BackgroundGradient then
         create("UIGradient", {
             Parent = main,
@@ -346,39 +455,18 @@ function EzHub:CreateWindow(opts)
         })
     end
 
-    -- dekoracyjna poświata na dole
-    local glow = create("Frame", {
-        Parent = main,
-        BackgroundColor3 = theme.Accent2,
-        BackgroundTransparency = 0.8,
-        AnchorPoint = Vector2.new(0.5, 1),
-        Position = UDim2.new(0.5, 0, 1, 16),
-        Size = UDim2.new(0.6, 0, 0, 40),
-        BorderSizePixel = 0,
-    })
-    create("UICorner", {Parent = glow, CornerRadius = UDim.new(1, 0)})
-
-    -- top bar z ikoną, grą, creatorem
+    -- Top bar
     local topBar = create("Frame", {
         Parent = main,
         BackgroundColor3 = theme.Panel,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 52),
+        Size = UDim2.new(1, 0, 0, 46),
     })
-
-    create("UICorner", {Parent = topBar, CornerRadius = UDim.new(0, 18)})
+    create("UICorner", {Parent = topBar, CornerRadius = UDim.new(0, 16)})
     create("UIStroke", {
         Parent = topBar,
         Color = theme.Stroke,
         Transparency = 0.5,
-    })
-
-    local topLayout = create("UIListLayout", {
-        Parent = topBar,
-        FillDirection = Enum.FillDirection.Horizontal,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 8),
     })
 
     local iconProvider = self._iconProvider
@@ -391,59 +479,37 @@ function EzHub:CreateWindow(opts)
         end
     end
 
+    local appIconHolder
     if appIconId ~= "" then
-        local iconHolder = create("Frame", {
+        appIconHolder = create("Frame", {
             Parent = topBar,
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0, 40, 0, 40),
-        })
-
-        local iconBg = create("Frame", {
-            Parent = iconHolder,
             BackgroundColor3 = theme.Panel2,
             BorderSizePixel = 0,
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            Position = UDim2.new(0.5, 0, 0.5, 0),
-            Size = UDim2.new(0, 36, 0, 36),
+            Position = UDim2.new(0, 10, 0.5, -15),
+            Size = UDim2.new(0, 30, 0, 30),
         })
-
-        create("UICorner", {Parent = iconBg, CornerRadius = UDim.new(1, 0)})
+        create("UICorner", {Parent = appIconHolder, CornerRadius = UDim.new(1, 0)})
         create("UIStroke", {
-            Parent = iconBg,
+            Parent = appIconHolder,
             Color = theme.Stroke,
             Transparency = 0.4,
         })
-
-        local img = create("ImageLabel", {
-            Parent = iconBg,
+        create("ImageLabel", {
+            Parent = appIconHolder,
             BackgroundTransparency = 1,
             AnchorPoint = Vector2.new(0.5, 0.5),
             Position = UDim2.new(0.5, 0, 0.5, 0),
-            Size = UDim2.new(0, 24, 0, 24),
+            Size = UDim2.new(0, 20, 0, 20),
             Image = appIconId,
             ImageColor3 = theme.Accent,
         })
     end
 
-    local titleHolder = create("Frame", {
+    local titleLabel = create("TextLabel", {
         Parent = topBar,
         BackgroundTransparency = 1,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Size = UDim2.new(1, -210, 0, 0),
-    })
-
-    local titleLayout = create("UIListLayout", {
-        Parent = titleHolder,
-        FillDirection = Enum.FillDirection.Vertical,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 2),
-    })
-
-    local titleLabel = create("TextLabel", {
-        Parent = titleHolder,
-        BackgroundTransparency = 1,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Size = UDim2.new(1, 0, 0, 0),
+        Position = UDim2.new(0, appIconId ~= "" and 50 or 16, 0, 4),
+        Size = UDim2.new(1, -200, 0, 20),
         Font = Enum.Font.GothamBold,
         Text = opts.Title or "EzHub",
         TextColor3 = theme.Text,
@@ -451,65 +517,43 @@ function EzHub:CreateWindow(opts)
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    local subLine = string.format(
-        "%s%s%s",
-        opts.SubTitle or "Modern UI Library",
-        opts.GameName and ("  •  " .. tostring(opts.GameName)) or "",
-        opts.CreatorName and ("  •  by " .. tostring(opts.CreatorName)) or ""
-    )
+    local subParts = {}
+    subParts[#subParts+1] = opts.SubTitle or "Modern UI Library"
+    if opts.GameName then subParts[#subParts+1] = tostring(opts.GameName) end
+    if opts.CreatorName then subParts[#subParts+1] = "by " .. tostring(opts.CreatorName) end
 
     local subtitleLabel = create("TextLabel", {
-        Parent = titleHolder,
+        Parent = topBar,
         BackgroundTransparency = 1,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Size = UDim2.new(1, 0, 0, 0),
+        Position = UDim2.new(0, appIconId ~= "" and 50 or 16, 0, 24),
+        Size = UDim2.new(1, -220, 0, 18),
         Font = Enum.Font.Gotham,
-        Text = subLine,
+        Text = table.concat(subParts, "  •  "),
         TextColor3 = theme.TextMuted,
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    -- prawy górny róg: badge i przycisk X
-    local rightHolder = create("Frame", {
+    local closeBtn = create("TextButton", {
         Parent = topBar,
         BackgroundTransparency = 1,
-        Size = UDim2.new(0, 160, 1, 0),
-    })
-
-    local rightLayout = create("UIListLayout", {
-        Parent = rightHolder,
-        FillDirection = Enum.FillDirection.Horizontal,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        HorizontalAlignment = Enum.HorizontalAlignment.Right,
-        Padding = UDim.new(0, 8),
-    })
-
-    local gameBadge = create("TextLabel", {
-        Parent = rightHolder,
-        BackgroundColor3 = theme.Panel2,
-        AutomaticSize = Enum.AutomaticSize.XY,
-        Size = UDim2.new(0, 0, 0, 22),
-        Font = Enum.Font.Gotham,
-        Text = opts.GameName and ("GAME • " .. tostring(opts.GameName)) or "EzHub UI",
-        TextColor3 = theme.TextMuted,
-        TextSize = 12,
-    })
-
-    create("UICorner", {Parent = gameBadge, CornerRadius = UDim.new(1, 0)})
-    create("UIStroke", {
-        Parent = gameBadge,
-        Color = theme.Stroke,
-        Transparency = 0.5,
-    })
-
-    local closeBtn = create("TextButton", {
-        Parent = rightHolder,
-        BackgroundTransparency = 1,
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -8, 0.5, 0),
         Size = UDim2.new(0, 26, 0, 26),
         Font = Enum.Font.GothamBold,
         Text = "×",
+        TextColor3 = theme.TextMuted,
+        TextSize = 18,
+    })
+
+    local minimizeBtn = create("TextButton", {
+        Parent = topBar,
+        BackgroundTransparency = 1,
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -40, 0.5, 0),
+        Size = UDim2.new(0, 24, 0, 24),
+        Font = Enum.Font.GothamBold,
+        Text = "–",
         TextColor3 = theme.TextMuted,
         TextSize = 20,
     })
@@ -517,166 +561,305 @@ function EzHub:CreateWindow(opts)
     closeBtn.MouseEnter:Connect(function()
         tween(closeBtn, TweenInfo.new(0.15), {TextColor3 = theme.Danger})
     end)
-
     closeBtn.MouseLeave:Connect(function()
         tween(closeBtn, TweenInfo.new(0.15), {TextColor3 = theme.TextMuted})
     end)
-
     closeBtn.MouseButton1Click:Connect(function()
         main.Visible = false
     end)
 
-    -- left panel with tabs + profile
-    local leftPanel = create("Frame", {
-        Parent = main,
-        BackgroundColor3 = theme.Panel,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 0, 0, 52),
-        Size = UDim2.new(0, 200, 1, -52),
-    })
-
-    create("UIStroke", {
-        Parent = leftPanel,
-        Color = theme.Stroke,
-        Transparency = 0.6,
-    })
-
-    local profilePanel, profileHeight = createProfilePanel(leftPanel, theme)
-
-    local tabList = create("ScrollingFrame", {
-        Parent = leftPanel,
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 8, 0, 8),
-        Size = UDim2.new(1, -16, 1, -(profileHeight + 22)),
-        ScrollBarThickness = 3,
-        ScrollBarImageColor3 = theme.Stroke,
-        CanvasSize = UDim2.new(0, 0, 0, 0),
-    })
-
-    local tabLayout = create("UIListLayout", {
-        Parent = tabList,
-        FillDirection = Enum.FillDirection.Vertical,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 8),
-    })
-
-    tabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        tabList.CanvasSize = UDim2.new(0, 0, 0, tabLayout.AbsoluteContentSize.Y + 4)
+    minimizeBtn.MouseEnter:Connect(function()
+        tween(minimizeBtn, TweenInfo.new(0.15), {TextColor3 = theme.Accent})
+    end)
+    minimizeBtn.MouseLeave:Connect(function()
+        tween(minimizeBtn, TweenInfo.new(0.15), {TextColor3 = theme.TextMuted})
     end)
 
-    -- right content area
+    -- Content area
     local content = create("Frame", {
         Parent = main,
         BackgroundColor3 = theme.Panel2,
         BorderSizePixel = 0,
-        Position = UDim2.new(0, 200, 0, 52),
-        Size = UDim2.new(1, -200, 1, -52),
+        Position = UDim2.new(0, 8, 0, 52),
+        Size = UDim2.new(1, -16, 1, -60),
     })
-
-    create("UICorner", {Parent = content, CornerRadius = UDim.new(0, 18)})
+    create("UICorner", {Parent = content, CornerRadius = UDim.new(0, 14)})
     create("UIStroke", {
         Parent = content,
         Color = theme.Stroke,
         Transparency = 0.4,
     })
 
-    local contentHolder = create("Frame", {
+    -- Tabs bar (top)
+    local tabsBar = create("ScrollingFrame", {
         Parent = content,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 14, 0, 12),
-        Size = UDim2.new(1, -28, 1, -24),
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 10, 0, 8),
+        Size = UDim2.new(1, -20, 0, 30),
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = theme.Stroke,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
     })
+    local tabsLayout = create("UIListLayout", {
+        Parent = tabsBar,
+        FillDirection = Enum.FillDirection.Horizontal,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 6),
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+    })
+    tabsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        tabsBar.CanvasSize = UDim2.new(0, tabsLayout.AbsoluteContentSize.X + 4, 0, 0)
+    end)
 
-    makeDraggable(topBar, main)
+    -- Pages
+    local pagesHolder = create("Frame", {
+        Parent = content,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 10, 0, 42),
+        Size = UDim2.new(1, -20, 1, -52),
+    })
 
     local windowObj = setmetatable({
         _ezhub = self,
         _theme = theme,
         _main = main,
+        _topBar = topBar,
+        _tabsBar = tabsBar,
+        _tabsLayout = tabsLayout,
+        _pagesHolder = pagesHolder,
         _tabs = {},
-        _tabList = tabList,
-        _tabLayout = tabLayout,
-        _contentHolder = contentHolder,
         _activeTab = nil,
+        _toggleKey = nil,
+        _toggleConn = nil,
+        _openButton = nil,
     }, Window)
+
+    -- profile card bottom-left (inside content)
+    createProfileCard(content, theme)
+
+    -- dragging
+    makeDraggable(topBar, main)
+
+    -- minimize -> show open button if configured
+    minimizeBtn.MouseButton1Click:Connect(function()
+        main.Visible = false
+        if windowObj._openButton then
+            windowObj._openButton.Visible = true
+        end
+    end)
 
     table.insert(self._windows, windowObj)
     return windowObj
 end
 
---// Window:CreateTab
+--// WINDOW METHODS
+
+function Window:_ensureToggleConnection()
+    if self._toggleConn then
+        self._toggleConn:Disconnect()
+        self._toggleConn = nil
+    end
+    if not self._toggleKey then return end
+
+    self._toggleConn = UserInputService.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.KeyCode == self._toggleKey then
+            self._main.Visible = not self._main.Visible
+            if self._openButton then
+                self._openButton.Visible = not self._main.Visible
+            end
+        end
+    end)
+end
+
+function Window:SetToggleKey(keyCode)
+    self._toggleKey = keyCode
+    self:_ensureToggleConnection()
+end
+
+-- OpenButton / mini window
+-- Window:EditOpenButton({
+--   Title = "Open Example UI",
+--   Icon = "monitor" or rbxassetid,
+--   CornerRadius = UDim.new(0,16),
+--   StrokeThickness = 2,
+--   Color = ColorSequence.new{...} or nil,
+--   OnlyMobile = false,
+--   Enabled = true,
+--   Draggable = true,
+-- })
+function Window:EditOpenButton(opts)
+    opts = opts or {}
+    local theme = self._theme
+    local root = getOpenButtonRoot()
+
+    if self._openButton and not opts.Enabled then
+        self._openButton:Destroy()
+        self._openButton = nil
+        return
+    end
+
+    if opts.OnlyMobile and not UserInputService.TouchEnabled then
+        if self._openButton then
+            self._openButton.Visible = false
+        end
+        return
+    end
+
+    if not self._openButton then
+        self._openButton = create("Frame", {
+            Parent = root,
+            BackgroundColor3 = theme.Panel2,
+            BorderSizePixel = 0,
+            AnchorPoint = Vector2.new(0, 1),
+            Position = UDim2.new(0, 0, 1, 0),
+            Size = UDim2.new(0, 220, 0, 40),
+        })
+        create("UICorner", {Parent = self._openButton, CornerRadius = opts.CornerRadius or UDim.new(0, 16)})
+        create("UIStroke", {
+            Parent = self._openButton,
+            Color = theme.Stroke,
+            Thickness = opts.StrokeThickness or 1.5,
+            Transparency = 0.4,
+        })
+        local gradColor = opts.Color or ColorSequence.new({
+            ColorSequenceKeypoint.new(0, theme.Accent),
+            ColorSequenceKeypoint.new(1, theme.Accent2),
+        })
+        create("UIGradient", {
+            Parent = self._openButton,
+            Color = gradColor,
+            Rotation = 0,
+            Transparency = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 0.7),
+                NumberSequenceKeypoint.new(1, 0.7),
+            },
+        })
+
+        local btn = create("TextButton", {
+            Parent = self._openButton,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            Font = Enum.Font.Gotham,
+            Text = "",
+        })
+
+        local layout = create("UIListLayout", {
+            Parent = btn,
+            FillDirection = Enum.FillDirection.Horizontal,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 8),
+            VerticalAlignment = Enum.VerticalAlignment.Center,
+        })
+
+        local iconImg = create("ImageLabel", {
+            Parent = btn,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 20, 0, 20),
+            Image = "",
+            ImageColor3 = theme.Text,
+        })
+
+        local label = create("TextLabel", {
+            Parent = btn,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -24, 1, 0),
+            Font = Enum.Font.GothamBold,
+            Text = "",
+            TextColor3 = theme.Text,
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left,
+        })
+
+        self._openButtonBtn = btn
+        self._openButtonIcon = iconImg
+        self._openButtonLabel = label
+
+        btn.MouseButton1Click:Connect(function()
+            self._main.Visible = true
+            self._openButton.Visible = false
+        end)
+
+        if opts.Draggable ~= false then
+            makeDraggable(btn, self._openButton)
+        end
+    end
+
+    local title = opts.Title or "Open UI"
+    self._openButtonLabel.Text = title
+
+    if opts.Icon then
+        local id
+        if opts.Icon:match("^rbxassetid://") then
+            id = opts.Icon
+        else
+            id = self._ezhub._iconProvider(opts.Icon)
+        end
+        self._openButtonIcon.Image = id or ""
+    end
+
+    self._openButton.Visible = opts.Enabled ~= false and not self._main.Visible
+end
+
+--// TABS
 function Window:CreateTab(name, iconName)
     local theme = self._theme
     local iconProvider = self._ezhub._iconProvider
 
     local btn = create("TextButton", {
-        Parent = self._tabList,
+        Parent = self._tabsBar,
         BackgroundColor3 = Color3.fromRGB(0, 0, 0),
         BackgroundTransparency = 0.7,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 36),
+        Size = UDim2.new(0, 110, 0, 26),
         AutoButtonColor = false,
         Text = "",
     })
-
-    create("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 10)})
+    create("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 8)})
     create("UIStroke", {
         Parent = btn,
         Color = theme.Stroke,
         Transparency = 0.6,
     })
 
-    local iconImg = iconName and iconProvider(iconName) or ""
+    local iconId = iconName and iconProvider(iconName) or ""
     local icon = create("ImageLabel", {
         Parent = btn,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 10, 0.5, -10),
-        Size = UDim2.new(0, 20, 0, 20),
-        Image = iconImg,
+        Position = UDim2.new(0, 8, 0.5, -9),
+        Size = UDim2.new(0, 18, 0, 18),
+        Image = iconId,
         ImageColor3 = theme.TextMuted,
     })
-
     local label = create("TextLabel", {
         Parent = btn,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 38, 0, 0),
-        Size = UDim2.new(1, -48, 1, 0),
+        Position = UDim2.new(0, 30, 0, 0),
+        Size = UDim2.new(1, -34, 1, 0),
         Font = Enum.Font.Gotham,
         Text = name,
         TextColor3 = theme.TextMuted,
-        TextSize = 14,
+        TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    local indicator = create("Frame", {
-        Parent = btn,
-        BackgroundColor3 = theme.Accent,
-        BorderSizePixel = 0,
-        AnchorPoint = Vector2.new(0, 0.5),
-        Position = UDim2.new(0, -3, 0.5, 0),
-        Size = UDim2.new(0, 3, 1, -10),
-        Visible = false,
-    })
-
     local page = create("ScrollingFrame", {
-        Parent = self._contentHolder,
+        Parent = self._pagesHolder,
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 1, 0),
+        Size = UDim2.new(1, 0, 1, -70), -- zostawiamy miejsce na profil
         ScrollBarThickness = 3,
         ScrollBarImageColor3 = theme.Stroke,
         Visible = false,
         CanvasSize = UDim2.new(0, 0, 0, 0),
     })
-
     local layout = create("UIListLayout", {
         Parent = page,
         FillDirection = Enum.FillDirection.Vertical,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 10),
     })
-
     layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         page.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
     end)
@@ -685,12 +868,12 @@ function Window:CreateTab(name, iconName)
         _window = self,
         _theme = theme,
         _button = btn,
-        _page = page,
         _label = label,
         _icon = icon,
-        _indicator = indicator,
+        _page = page,
         _sections = {},
         _name = name,
+        _defaultSection = nil,
     }, Tab)
 
     table.insert(self._tabs, tabObj)
@@ -699,17 +882,15 @@ function Window:CreateTab(name, iconName)
         if self._activeTab == tabObj then return end
         for _, t in ipairs(self._tabs) do
             t._page.Visible = false
-            t._indicator.Visible = false
-            tween(t._button, TweenInfo.new(0.18), {BackgroundTransparency = 0.7})
-            tween(t._label, TweenInfo.new(0.18), {TextColor3 = theme.TextMuted})
-            tween(t._icon, TweenInfo.new(0.18), {ImageColor3 = theme.TextMuted})
+            tween(t._button, TweenInfo.new(0.15), {BackgroundTransparency = 0.7})
+            tween(t._label, TweenInfo.new(0.15), {TextColor3 = theme.TextMuted})
+            tween(t._icon, TweenInfo.new(0.15), {ImageColor3 = theme.TextMuted})
         end
         self._activeTab = tabObj
         tabObj._page.Visible = true
-        tabObj._indicator.Visible = true
-        tween(btn, TweenInfo.new(0.18), {BackgroundTransparency = 0.1})
-        tween(label, TweenInfo.new(0.18), {TextColor3 = theme.Text})
-        tween(icon, TweenInfo.new(0.18), {ImageColor3 = theme.Accent})
+        tween(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.1})
+        tween(label, TweenInfo.new(0.15), {TextColor3 = theme.Text})
+        tween(icon, TweenInfo.new(0.15), {ImageColor3 = theme.Accent})
     end
 
     btn.MouseButton1Click:Connect(activate)
@@ -720,7 +901,8 @@ function Window:CreateTab(name, iconName)
     return tabObj
 end
 
---// Tab helpers
+--// TAB helpers
+
 function Tab:CreateTitle(text)
     local theme = self._theme
     local lbl = create("TextLabel", {
@@ -739,39 +921,28 @@ end
 
 function Tab:CreateSection(name)
     local theme = self._theme
-
-    local section = create("Frame", {
+    local sectionFrame = create("Frame", {
         Parent = self._page,
         BackgroundColor3 = theme.Panel,
         BorderSizePixel = 0,
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, 0, 0, 0),
     })
-
-    create("UICorner", {Parent = section, CornerRadius = UDim.new(0, 12)})
+    create("UICorner", {Parent = sectionFrame, CornerRadius = UDim.new(0, 12)})
     create("UIStroke", {
-        Parent = section,
+        Parent = sectionFrame,
         Color = theme.Stroke,
         Transparency = 0.5,
     })
-
     create("UIPadding", {
-        Parent = section,
+        Parent = sectionFrame,
         PaddingTop = UDim.new(0, 10),
         PaddingBottom = UDim.new(0, 10),
         PaddingLeft = UDim.new(0, 12),
         PaddingRight = UDim.new(0, 12),
     })
-
-    create("UIListLayout", {
-        Parent = section,
-        FillDirection = Enum.FillDirection.Vertical,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 8),
-    })
-
     create("TextLabel", {
-        Parent = section,
+        Parent = sectionFrame,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, 0, 0, 0),
@@ -781,11 +952,23 @@ function Tab:CreateSection(name)
         TextSize = 15,
         TextXAlignment = Enum.TextXAlignment.Left,
     })
+    local content = create("Frame", {
+        Parent = sectionFrame,
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, 0, 0, 0),
+    })
+    create("UIListLayout", {
+        Parent = content,
+        FillDirection = Enum.FillDirection.Vertical,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 6),
+    })
 
     local sectionObj = setmetatable({
         _tab = self,
         _theme = theme,
-        _frame = section,
+        _frame = content,
     }, Section)
 
     table.insert(self._sections, sectionObj)
@@ -804,25 +987,24 @@ function Tab:CreateToggle(opts)   return self:_getDefaultSection():CreateToggle(
 function Tab:CreateSlider(opts)   return self:_getDefaultSection():CreateSlider(opts)   end
 function Tab:CreateDropdown(opts) return self:_getDefaultSection():CreateDropdown(opts) end
 
---// Section controls
-
-function Section:CreateButton(opts)
+-- Keybind row on tab (not in section – jak w przykładzie)
+function Tab:Keybind(opts)
     opts = opts or {}
     local theme = self._theme
 
-    local holder = create("TextButton", {
-        Parent = self._frame,
-        BackgroundColor3 = theme.Panel2,
+    local holder = create("Frame", {
+        Parent = self._page,
+        BackgroundColor3 = theme.Panel,
         BorderSizePixel = 0,
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, 0, 0, 0),
-        AutoButtonColor = false,
-        Text = "",
     })
-
     create("UICorner", {Parent = holder, CornerRadius = UDim.new(0, 10)})
-    create("UIStroke", {Parent = holder, Color = theme.Stroke, Transparency = 0.6})
-
+    create("UIStroke", {
+        Parent = holder,
+        Color = theme.Stroke,
+        Transparency = 0.5,
+    })
     create("UIPadding", {
         Parent = holder,
         PaddingTop = UDim.new(0, 8),
@@ -839,25 +1021,154 @@ function Section:CreateButton(opts)
         VerticalAlignment = Enum.VerticalAlignment.Center,
     })
 
-    local leftCol = create("Frame", {
+    local left = create("Frame", {
+        Parent = holder,
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, -120, 0, 0),
+    })
+    create("UIListLayout", {
+        Parent = left,
+        FillDirection = Enum.FillDirection.Vertical,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 2),
+    })
+
+    create("TextLabel", {
+        Parent = left,
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, 0, 0, 0),
+        Font = Enum.Font.Gotham,
+        Text = opts.Title or "Keybind",
+        TextColor3 = theme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+    create("TextLabel", {
+        Parent = left,
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, 0, 0, 0),
+        Font = Enum.Font.Gotham,
+        Text = opts.Desc or "",
+        TextColor3 = theme.TextMuted,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+
+    local button = create("TextButton", {
+        Parent = holder,
+        BackgroundColor3 = theme.Panel2,
+        BorderSizePixel = 0,
+        Size = UDim2.new(0, 90, 0, 26),
+        AutoButtonColor = false,
+        Font = Enum.Font.Gotham,
+        Text = "",
+        TextSize = 14,
+        TextColor3 = theme.Text,
+    })
+    create("UICorner", {Parent = button, CornerRadius = UDim.new(0, 8)})
+    create("UIStroke", {
+        Parent = button,
+        Color = theme.Stroke,
+        Transparency = 0.4,
+    })
+
+    local label = create("TextLabel", {
+        Parent = button,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        Font = Enum.Font.Gotham,
+        Text = opts.Value or "None",
+        TextColor3 = theme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Center,
+    })
+
+    local listening = false
+    local current = opts.Value or "None"
+
+    local function setKey(name)
+        current = name
+        label.Text = name
+        if type(opts.Callback) == "function" then
+            task.spawn(opts.Callback, name)
+        end
+    end
+
+    button.MouseButton1Click:Connect(function()
+        if listening then return end
+        listening = true
+        label.Text = "Press key..."
+        local conn
+        conn = UserInputService.InputBegan:Connect(function(input, gp)
+            if gp then return end
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                local name = input.KeyCode.Name
+                setKey(name)
+                listening = false
+                conn:Disconnect()
+            end
+        end)
+    end)
+
+    return {
+        Set = function(_, name) setKey(name) end,
+        Get = function() return current end,
+    }
+end
+
+--// SECTION CONTROLS (Button, Toggle, Slider, Dropdown)
+
+function Section:CreateButton(opts)
+    opts = opts or {}
+    local theme = self._theme
+
+    local holder = create("TextButton", {
+        Parent = self._frame,
+        BackgroundColor3 = theme.Panel2,
+        BorderSizePixel = 0,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, 0, 0, 0),
+        AutoButtonColor = false,
+        Text = "",
+    })
+    create("UICorner", {Parent = holder, CornerRadius = UDim.new(0, 10)})
+    create("UIStroke", {Parent = holder, Color = theme.Stroke, Transparency = 0.6})
+    create("UIPadding", {
+        Parent = holder,
+        PaddingTop = UDim.new(0, 8),
+        PaddingBottom = UDim.new(0, 8),
+        PaddingLeft = UDim.new(0, 10),
+        PaddingRight = UDim.new(0, 10),
+    })
+
+    local layout = create("UIListLayout", {
+        Parent = holder,
+        FillDirection = Enum.FillDirection.Horizontal,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 8),
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+    })
+
+    local left = create("Frame", {
         Parent = holder,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, -40, 0, 0),
     })
-
     create("UIListLayout", {
-        Parent = leftCol,
+        Parent = left,
         FillDirection = Enum.FillDirection.Vertical,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 2),
-        HorizontalAlignment = Enum.HorizontalAlignment.Left,
     })
 
     local iconId = opts.Icon and singleton._iconProvider(opts.Icon) or ""
     if iconId ~= "" then
         local icon = create("ImageLabel", {
-            Parent = leftCol,
+            Parent = left,
             BackgroundTransparency = 1,
             Size = UDim2.new(0, 18, 0, 18),
             Image = iconId,
@@ -867,7 +1178,7 @@ function Section:CreateButton(opts)
     end
 
     create("TextLabel", {
-        Parent = leftCol,
+        Parent = left,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, 0, 0, 0),
@@ -879,7 +1190,7 @@ function Section:CreateButton(opts)
     })
 
     create("TextLabel", {
-        Parent = leftCol,
+        Parent = left,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, 0, 0, 0),
@@ -905,12 +1216,10 @@ function Section:CreateButton(opts)
         tween(holder, TweenInfo.new(0.12), {BackgroundColor3 = theme.Panel})
         tween(arrow, TweenInfo.new(0.12), {TextColor3 = theme.Accent})
     end)
-
     holder.MouseLeave:Connect(function()
         tween(holder, TweenInfo.new(0.12), {BackgroundColor3 = theme.Panel2})
         tween(arrow, TweenInfo.new(0.12), {TextColor3 = theme.TextMuted})
     end)
-
     holder.MouseButton1Click:Connect(function()
         if type(opts.Callback) == "function" then
             task.spawn(opts.Callback)
@@ -923,7 +1232,7 @@ end
 function Section:CreateToggle(opts)
     opts = opts or {}
     local theme = self._theme
-    local default = opts.Default or false
+    local state = opts.Default or false
 
     local holder = create("Frame", {
         Parent = self._frame,
@@ -932,10 +1241,8 @@ function Section:CreateToggle(opts)
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, 0, 0, 0),
     })
-
     create("UICorner", {Parent = holder, CornerRadius = UDim.new(0, 10)})
     create("UIStroke", {Parent = holder, Color = theme.Stroke, Transparency = 0.6})
-
     create("UIPadding", {
         Parent = holder,
         PaddingTop = UDim.new(0, 8),
@@ -952,23 +1259,21 @@ function Section:CreateToggle(opts)
         VerticalAlignment = Enum.VerticalAlignment.Center,
     })
 
-    local leftCol = create("Frame", {
+    local left = create("Frame", {
         Parent = holder,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, -60, 0, 0),
     })
-
     create("UIListLayout", {
-        Parent = leftCol,
+        Parent = left,
         FillDirection = Enum.FillDirection.Vertical,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 2),
-        HorizontalAlignment = Enum.HorizontalAlignment.Left,
     })
 
-    create("TextLabel", {
-        Parent = leftCol,
+    local titleLbl = create("TextLabel", {
+        Parent = left,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, 0, 0, 0),
@@ -978,9 +1283,8 @@ function Section:CreateToggle(opts)
         TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left,
     })
-
     create("TextLabel", {
-        Parent = leftCol,
+        Parent = left,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, 0, 0, 0),
@@ -991,7 +1295,7 @@ function Section:CreateToggle(opts)
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    local toggleBtn = create("TextButton", {
+    local btn = create("TextButton", {
         Parent = holder,
         BackgroundColor3 = theme.Panel,
         BorderSizePixel = 0,
@@ -999,44 +1303,39 @@ function Section:CreateToggle(opts)
         AutoButtonColor = false,
         Text = "",
     })
-
-    create("UICorner", {Parent = toggleBtn, CornerRadius = UDim.new(1, 0)})
-
+    create("UICorner", {Parent = btn, CornerRadius = UDim.new(1, 0)})
     local knob = create("Frame", {
-        Parent = toggleBtn,
+        Parent = btn,
         BackgroundColor3 = theme.Text,
         BorderSizePixel = 0,
         AnchorPoint = Vector2.new(0, 0.5),
         Position = UDim2.new(0, 2, 0.5, 0),
         Size = UDim2.new(0, 18, 0, 18),
     })
-
     create("UICorner", {Parent = knob, CornerRadius = UDim.new(1, 0)})
-
-    local state = default
 
     local function apply(animated)
         local pos = state and UDim2.new(1, -20, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
         local bg = state and theme.Success or theme.Panel
-
+        local titleColor = state and theme.Accent or theme.Text
         if animated then
-            tween(toggleBtn, TweenInfo.new(0.16), {BackgroundColor3 = bg})
+            tween(btn, TweenInfo.new(0.16), {BackgroundColor3 = bg})
             tween(knob, TweenInfo.new(0.16), {Position = pos})
+            tween(titleLbl, TweenInfo.new(0.16), {TextColor3 = titleColor})
         else
-            toggleBtn.BackgroundColor3 = bg
+            btn.BackgroundColor3 = bg
             knob.Position = pos
+            titleLbl.TextColor3 = titleColor
         end
-
         if type(opts.Callback) == "function" then
             task.spawn(opts.Callback, state)
         end
     end
 
-    toggleBtn.MouseButton1Click:Connect(function()
+    btn.MouseButton1Click:Connect(function()
         state = not state
         apply(true)
     end)
-
     apply(false)
 
     return {
@@ -1048,7 +1347,6 @@ end
 function Section:CreateSlider(opts)
     opts = opts or {}
     local theme = self._theme
-
     local min = opts.Min or 0
     local max = opts.Max or 100
     local value = opts.Default or min
@@ -1061,10 +1359,8 @@ function Section:CreateSlider(opts)
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, 0, 0, 0),
     })
-
     create("UICorner", {Parent = holder, CornerRadius = UDim.new(0, 10)})
     create("UIStroke", {Parent = holder, Color = theme.Stroke, Transparency = 0.6})
-
     create("UIPadding", {
         Parent = holder,
         PaddingTop = UDim.new(0, 8),
@@ -1072,7 +1368,6 @@ function Section:CreateSlider(opts)
         PaddingLeft = UDim.new(0, 10),
         PaddingRight = UDim.new(0, 10),
     })
-
     create("UIListLayout", {
         Parent = holder,
         FillDirection = Enum.FillDirection.Vertical,
@@ -1086,7 +1381,6 @@ function Section:CreateSlider(opts)
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, 0, 0, 0),
     })
-
     create("UIListLayout", {
         Parent = header,
         FillDirection = Enum.FillDirection.Horizontal,
@@ -1123,18 +1417,14 @@ function Section:CreateSlider(opts)
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 0, 8),
     })
-
     create("UICorner", {Parent = bar, CornerRadius = UDim.new(0, 999)})
-
     local fill = create("Frame", {
         Parent = bar,
         BackgroundColor3 = theme.Accent,
         BorderSizePixel = 0,
         Size = UDim2.new(0, 0, 1, 0),
     })
-
     create("UICorner", {Parent = fill, CornerRadius = UDim.new(0, 999)})
-
     local knob = create("Frame", {
         Parent = bar,
         BackgroundColor3 = theme.Text,
@@ -1143,20 +1433,18 @@ function Section:CreateSlider(opts)
         Size = UDim2.new(0, 12, 0, 12),
         Position = UDim2.new(0, 0, 0.5, 0),
     })
-
     create("UICorner", {Parent = knob, CornerRadius = UDim.new(1, 0)})
 
     local dragging = false
-
-    local function snap(v)
+    local function snap(x)
         if rounding > 0 then
             local pow = 10 ^ rounding
-            return math.floor(v * pow + 0.5) / pow
+            return math.floor(x * pow + 0.5) / pow
         end
-        return math.floor(v)
+        return math.floor(x)
     end
 
-    local function apply(v, fireCallback)
+    local function apply(v, fire)
         v = math.clamp(v, min, max)
         v = snap(v)
         value = v
@@ -1164,7 +1452,7 @@ function Section:CreateSlider(opts)
         fill.Size = UDim2.new(alpha, 0, 1, 0)
         knob.Position = UDim2.new(alpha, 0, 0.5, 0)
         valueLabel.Text = tostring(v)
-        if fireCallback and type(opts.Callback) == "function" then
+        if fire and type(opts.Callback) == "function" then
             task.spawn(opts.Callback, v)
         end
     end
@@ -1176,13 +1464,11 @@ function Section:CreateSlider(opts)
             apply(min + (max - min) * rel, true)
         end
     end)
-
     bar.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
-
     UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local rel = (input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X
@@ -1201,7 +1487,6 @@ end
 function Section:CreateDropdown(opts)
     opts = opts or {}
     local theme = self._theme
-
     local values = opts.Values or {}
     local selected = opts.Default or values[1]
     local callback = opts.Callback
@@ -1214,10 +1499,8 @@ function Section:CreateDropdown(opts)
         Size = UDim2.new(1, 0, 0, 0),
         ClipsDescendants = true,
     })
-
     create("UICorner", {Parent = holder, CornerRadius = UDim.new(0, 10)})
     create("UIStroke", {Parent = holder, Color = theme.Stroke, Transparency = 0.6})
-
     create("UIPadding", {
         Parent = holder,
         PaddingTop = UDim.new(0, 8),
@@ -1225,7 +1508,6 @@ function Section:CreateDropdown(opts)
         PaddingLeft = UDim.new(0, 10),
         PaddingRight = UDim.new(0, 10),
     })
-
     create("UIListLayout", {
         Parent = holder,
         FillDirection = Enum.FillDirection.Vertical,
@@ -1239,7 +1521,6 @@ function Section:CreateDropdown(opts)
         AutomaticSize = Enum.AutomaticSize.Y,
         Size = UDim2.new(1, 0, 0, 0),
     })
-
     create("UIListLayout", {
         Parent = header,
         FillDirection = Enum.FillDirection.Horizontal,
@@ -1269,7 +1550,6 @@ function Section:CreateDropdown(opts)
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Right,
     })
-
     local arrow = create("TextLabel", {
         Parent = header,
         BackgroundTransparency = 1,
@@ -1289,9 +1569,7 @@ function Section:CreateDropdown(opts)
         Size = UDim2.new(1, 0, 0, 0),
         Visible = false,
     })
-
     create("UICorner", {Parent = listHolder, CornerRadius = UDim.new(0, 8)})
-
     local listLayout = create("UIListLayout", {
         Parent = listHolder,
         FillDirection = Enum.FillDirection.Vertical,
@@ -1310,12 +1588,9 @@ function Section:CreateDropdown(opts)
         end
     end
 
-    local function buildList()
-        for _, b in ipairs(buttons) do
-            b:Destroy()
-        end
+    local function rebuild()
+        for _, b in ipairs(buttons) do b:Destroy() end
         table.clear(buttons)
-
         for _, v in ipairs(values) do
             local btn = create("TextButton", {
                 Parent = listHolder,
@@ -1328,28 +1603,21 @@ function Section:CreateDropdown(opts)
                 TextColor3 = theme.TextMuted,
                 TextSize = 13,
             })
-
             btn.MouseEnter:Connect(function()
                 tween(btn, TweenInfo.new(0.1), {BackgroundColor3 = theme.Panel2})
             end)
-
             btn.MouseLeave:Connect(function()
                 tween(btn, TweenInfo.new(0.1), {BackgroundColor3 = theme.Panel})
             end)
-
             btn.MouseButton1Click:Connect(function()
                 fire(v)
                 opened = false
                 listHolder.Visible = false
                 arrow.Text = "▼"
             end)
-
             table.insert(buttons, btn)
         end
     end
-
-    buildList()
-    if selected then fire(selected) end
 
     header.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -1359,176 +1627,17 @@ function Section:CreateDropdown(opts)
         end
     end)
 
+    rebuild()
+    if selected ~= nil then fire(selected) end
+
     return {
         Set = function(_, v) fire(v) end,
         Get = function() return selected end,
         Refresh = function(_, newValues)
             values = newValues or {}
-            buildList()
+            rebuild()
         end,
     }
 end
 
---// Notifications
--- EzHub:Notify({
---   Title = "Title",
---   Description = "Text",
---   Icon = "zap" lub "rbxassetid://...",
---   Type = "Info" / "Success" / "Error",
---   Duration = 4
--- })
-function EzHub:Notify(opts)
-    opts = opts or {}
-    local theme = self._theme
-    local root = getNotificationRoot()
-
-    local title = opts.Title or "Notification"
-    local desc = opts.Description or ""
-    local duration = tonumber(opts.Duration) or 4
-    local ntype = (opts.Type or "Info"):lower()
-
-    local stripeColor = theme.Accent
-    if ntype == "success" then
-        stripeColor = theme.Success
-    elseif ntype == "error" or ntype == "danger" then
-        stripeColor = theme.Danger
-    end
-
-    local iconId = ""
-    if typeof(opts.Icon) == "string" then
-        if opts.Icon:match("^rbxassetid://") then
-            iconId = opts.Icon
-        else
-            iconId = self._iconProvider(opts.Icon) or ""
-        end
-    end
-
-    local base = create("Frame", {
-        Parent = root,
-        BackgroundColor3 = theme.Panel2,
-        BorderSizePixel = 0,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Size = UDim2.new(1, 0, 0, 0),
-        BackgroundTransparency = 0.05,
-    })
-
-    create("UICorner", {Parent = base, CornerRadius = UDim.new(0, 14)})
-    create("UIStroke", {
-        Parent = base,
-        Color = theme.Stroke,
-        Transparency = 0.4,
-    })
-
-    create("UIGradient", {
-        Parent = base,
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, theme.Panel2),
-            ColorSequenceKeypoint.new(1, theme.Panel),
-        }),
-        Rotation = 90,
-    })
-
-    local stripe = create("Frame", {
-        Parent = base,
-        BackgroundColor3 = stripeColor,
-        BorderSizePixel = 0,
-        AnchorPoint = Vector2.new(0, 0),
-        Position = UDim2.new(0, 0, 0, 0),
-        Size = UDim2.new(0, 4, 1, 0),
-    })
-    create("UICorner", {Parent = stripe, CornerRadius = UDim.new(0, 14)})
-
-    create("UIPadding", {
-        Parent = base,
-        PaddingTop = UDim.new(0, 10),
-        PaddingBottom = UDim.new(0, 10),
-        PaddingLeft = UDim.new(0, 12),
-        PaddingRight = UDim.new(0, 12),
-    })
-
-    local layout = create("UIListLayout", {
-        Parent = base,
-        FillDirection = Enum.FillDirection.Horizontal,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 8),
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-    })
-
-    if iconId ~= "" then
-        create("ImageLabel", {
-            Parent = base,
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0, 24, 0, 24),
-            Image = iconId,
-            ImageColor3 = stripeColor,
-        })
-    end
-
-    local textHolder = create("Frame", {
-        Parent = base,
-        BackgroundTransparency = 1,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Size = UDim2.new(1, -40, 0, 0),
-    })
-
-    create("UIListLayout", {
-        Parent = textHolder,
-        FillDirection = Enum.FillDirection.Vertical,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 2),
-        HorizontalAlignment = Enum.HorizontalAlignment.Left,
-    })
-
-    create("TextLabel", {
-        Parent = textHolder,
-        BackgroundTransparency = 1,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Size = UDim2.new(1, 0, 0, 0),
-        Font = Enum.Font.GothamBold,
-        Text = title,
-        TextColor3 = theme.Text,
-        TextSize = 15,
-        TextXAlignment = Enum.TextXAlignment.Left,
-    })
-
-    create("TextLabel", {
-        Parent = textHolder,
-        BackgroundTransparency = 1,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Size = UDim2.new(1, 0, 0, 0),
-        Font = Enum.Font.Gotham,
-        Text = desc,
-        TextColor3 = theme.TextMuted,
-        TextSize = 13,
-        TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
-    })
-
-    -- wejście
-    base.BackgroundTransparency = 1
-    base.Position = UDim2.new(0, 40, 0, 0)
-    stripe.Size = UDim2.new(0, 0, 1, 0)
-
-    tween(base, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        BackgroundTransparency = 0.05,
-        Position = UDim2.new(0, 0, 0, 0),
-    })
-    tween(stripe, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        Size = UDim2.new(0, 4, 1, 0),
-    })
-
-    task.spawn(function()
-        task.wait(duration)
-        tween(base, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 40, 0, 0),
-        })
-        task.wait(0.22)
-        if base and base.Parent then
-            base:Destroy()
-        end
-    end)
-end
-
--- export singleton
 return singleton
