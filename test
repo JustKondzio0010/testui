@@ -8,7 +8,7 @@ local TweenService = game:GetService("TweenService")
 
 local LOCAL_PLAYER = Players.LocalPlayer
 
---// Quick create helper
+--// Small helpers
 local function create(className, props, children)
     local obj = Instance.new(className)
     for k, v in pairs(props or {}) do
@@ -20,74 +20,6 @@ local function create(className, props, children)
     return obj
 end
 
---// Themes (możesz dodawać kolejne)
-local Themes = {
-    GlassDark = {
-        Name = "GlassDark",
-        Background = Color3.fromRGB(15, 15, 24),
-        Background2 = Color3.fromRGB(32, 32, 50),
-        Panel = Color3.fromRGB(26, 26, 40),
-        Panel2 = Color3.fromRGB(38, 38, 60),
-        Accent = Color3.fromRGB(110, 130, 255),
-        Accent2 = Color3.fromRGB(210, 100, 255),
-        Text = Color3.fromRGB(235, 235, 255),
-        TextMuted = Color3.fromRGB(150, 150, 180),
-        Stroke = Color3.fromRGB(70, 70, 110),
-        Danger = Color3.fromRGB(255, 90, 130),
-        Success = Color3.fromRGB(0, 210, 140),
-        BackgroundGradient = {
-            ColorSequence.new(
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(18, 18, 30)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 30, 70))
-            ),
-            90,
-        },
-    },
-    GlassLight = {
-        Name = "GlassLight",
-        Background = Color3.fromRGB(242, 244, 255),
-        Background2 = Color3.fromRGB(230, 235, 255),
-        Panel = Color3.fromRGB(252, 252, 255),
-        Panel2 = Color3.fromRGB(240, 243, 255),
-        Accent = Color3.fromRGB(90, 110, 255),
-        Accent2 = Color3.fromRGB(210, 110, 255),
-        Text = Color3.fromRGB(20, 25, 60),
-        TextMuted = Color3.fromRGB(120, 130, 170),
-        Stroke = Color3.fromRGB(200, 205, 240),
-        Danger = Color3.fromRGB(230, 70, 100),
-        Success = Color3.fromRGB(0, 200, 130),
-        BackgroundGradient = {
-            ColorSequence.new(
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(230, 238, 255))
-            ),
-            90,
-        },
-    },
-    Neon = {
-        Name = "Neon",
-        Background = Color3.fromRGB(5, 5, 10),
-        Background2 = Color3.fromRGB(10, 10, 20),
-        Panel = Color3.fromRGB(14, 14, 30),
-        Panel2 = Color3.fromRGB(22, 22, 48),
-        Accent = Color3.fromRGB(0, 255, 200),
-        Accent2 = Color3.fromRGB(190, 70, 255),
-        Text = Color3.fromRGB(230, 255, 255),
-        TextMuted = Color3.fromRGB(120, 160, 160),
-        Stroke = Color3.fromRGB(0, 90, 90),
-        Danger = Color3.fromRGB(255, 60, 120),
-        Success = Color3.fromRGB(0, 220, 140),
-        BackgroundGradient = {
-            ColorSequence.new(
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 10, 20)),
-                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 30, 60)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 10, 60))
-            ),
-            120,
-        },
-    },
-}
-
 local function cloneTheme(theme)
     local t = {}
     for k, v in pairs(theme) do
@@ -96,34 +28,10 @@ local function cloneTheme(theme)
     return t
 end
 
---// Lucide-like icon provider
--- Domyślnie pusta mapa. Ty wstawiasz assetId ze swoich uploadów.
-local DefaultIconMap = {
-    home = "rbxassetid://0",
-    settings = "rbxassetid://0",
-    user = "rbxassetid://0",
-    ["mouse-pointer"] = "rbxassetid://0",
-    zap = "rbxassetid://0",
-}
-
-local function defaultIconProvider(name)
-    return DefaultIconMap[name] or ""
-end
-
--- global singleton
-local singleton = setmetatable({
-    _themeName = "GlassDark",
-    _theme = cloneTheme(Themes.GlassDark),
-    _iconProvider = defaultIconProvider,
-    _windows = {},
-}, EzHub)
-
---// Tween helper
 local function tween(obj, info, props)
     TweenService:Create(obj, info, props):Play()
 end
 
---// Draggable
 local function makeDraggable(handle, dragObject)
     local dragging = false
     local dragStart, startPos
@@ -155,7 +63,88 @@ local function makeDraggable(handle, dragObject)
     end)
 end
 
---// ScreenGui singleton
+--// Themes (poprawione ColorSequence.new)
+local Themes = {
+    GlassDark = {
+        Name = "GlassDark",
+        Background = Color3.fromRGB(15, 15, 24),
+        Background2 = Color3.fromRGB(32, 32, 50),
+        Panel = Color3.fromRGB(26, 26, 40),
+        Panel2 = Color3.fromRGB(38, 38, 60),
+        Accent = Color3.fromRGB(110, 130, 255),
+        Accent2 = Color3.fromRGB(210, 100, 255),
+        Text = Color3.fromRGB(235, 235, 255),
+        TextMuted = Color3.fromRGB(150, 150, 180),
+        Stroke = Color3.fromRGB(70, 70, 110),
+        Danger = Color3.fromRGB(255, 90, 130),
+        Success = Color3.fromRGB(0, 210, 140),
+        BackgroundGradient = {
+            ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(18, 18, 30)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 30, 70)),
+            }),
+            90,
+        },
+    },
+    GlassLight = {
+        Name = "GlassLight",
+        Background = Color3.fromRGB(242, 244, 255),
+        Background2 = Color3.fromRGB(230, 235, 255),
+        Panel = Color3.fromRGB(252, 252, 255),
+        Panel2 = Color3.fromRGB(240, 243, 255),
+        Accent = Color3.fromRGB(90, 110, 255),
+        Accent2 = Color3.fromRGB(210, 110, 255),
+        Text = Color3.fromRGB(20, 25, 60),
+        TextMuted = Color3.fromRGB(120, 130, 170),
+        Stroke = Color3.fromRGB(200, 205, 240),
+        Danger = Color3.fromRGB(230, 70, 100),
+        Success = Color3.fromRGB(0, 200, 130),
+        BackgroundGradient = {
+            ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(230, 238, 255)),
+            }),
+            90,
+        },
+    },
+    Neon = {
+        Name = "Neon",
+        Background = Color3.fromRGB(5, 5, 10),
+        Background2 = Color3.fromRGB(10, 10, 20),
+        Panel = Color3.fromRGB(14, 14, 30),
+        Panel2 = Color3.fromRGB(22, 22, 48),
+        Accent = Color3.fromRGB(0, 255, 200),
+        Accent2 = Color3.fromRGB(190, 70, 255),
+        Text = Color3.fromRGB(230, 255, 255),
+        TextMuted = Color3.fromRGB(120, 160, 160),
+        Stroke = Color3.fromRGB(0, 90, 90),
+        Danger = Color3.fromRGB(255, 60, 120),
+        Success = Color3.fromRGB(0, 220, 140),
+        BackgroundGradient = {
+            ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 10, 20)),
+                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 30, 60)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 10, 60)),
+            }),
+            120,
+        },
+    },
+}
+
+--// Icon provider (Lucide-style)
+local DefaultIconMap = {
+    home = "rbxassetid://0",
+    settings = "rbxassetid://0",
+    user = "rbxassetid://0",
+    ["mouse-pointer"] = "rbxassetid://0",
+    zap = "rbxassetid://0",
+}
+
+local function defaultIconProvider(name)
+    return DefaultIconMap[name] or ""
+end
+
+--// ScreenGui + notifications
 local function getScreenGui()
     local pg = LOCAL_PLAYER:WaitForChild("PlayerGui")
     local gui = pg:FindFirstChild("EzHubUI")
@@ -171,7 +160,121 @@ local function getScreenGui()
     return gui
 end
 
---// Theme API
+local function getNotificationRoot()
+    local gui = getScreenGui()
+    local root = gui:FindFirstChild("EzHubNotifications")
+    if not root then
+        root = create("Frame", {
+            Name = "EzHubNotifications",
+            Parent = gui,
+            AnchorPoint = Vector2.new(1, 0.5),
+            Position = UDim2.new(1, -20, 0.5, 0),
+            Size = UDim2.new(0, 320, 1, -40),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+        })
+
+        create("UIListLayout", {
+            Parent = root,
+            FillDirection = Enum.FillDirection.Vertical,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 8),
+            VerticalAlignment = Enum.VerticalAlignment.Center,
+        })
+    end
+    return root
+end
+
+--// Player profile (bottom-left of window side menu)
+local function createProfilePanel(parent, theme)
+    local panelHeight = 70
+
+    local frame = create("Frame", {
+        Parent = parent,
+        AnchorPoint = Vector2.new(0, 1),
+        Position = UDim2.new(0, 8, 1, -8),
+        Size = UDim2.new(1, -16, 0, panelHeight),
+        BackgroundColor3 = theme.Panel,
+        BorderSizePixel = 0,
+    })
+
+    create("UICorner", {Parent = frame, CornerRadius = UDim.new(0, 10)})
+    create("UIStroke", {
+        Parent = frame,
+        Color = theme.Stroke,
+        Transparency = 0.6,
+    })
+
+    local avatar = create("ImageLabel", {
+        Parent = frame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, 48, 0, 48),
+        Position = UDim2.new(0, 10, 0.5, -24),
+        Image = "",
+    })
+
+    create("UICorner", {Parent = avatar, CornerRadius = UDim.new(1, 0)})
+
+    local nameLabel = create("TextLabel", {
+        Parent = frame,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 68, 0, 10),
+        Size = UDim2.new(1, -80, 0, 18),
+        Font = Enum.Font.GothamBold,
+        Text = LOCAL_PLAYER.Name,
+        TextColor3 = theme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+
+    local subLabel = create("TextLabel", {
+        Parent = frame,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 68, 0, 30),
+        Size = UDim2.new(1, -80, 0, 16),
+        Font = Enum.Font.Gotham,
+        Text = "UserId: " .. LOCAL_PLAYER.UserId,
+        TextColor3 = theme.TextMuted,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+
+    task.spawn(function()
+        local ok, thumb = pcall(function()
+            local url = Players:GetUserThumbnailAsync(
+                LOCAL_PLAYER.UserId,
+                Enum.ThumbnailType.HeadShot,
+                Enum.ThumbnailSize.Size100x100
+            )
+            return url
+        end)
+        if ok and thumb then
+            avatar.Image = thumb
+        end
+    end)
+
+    return frame, panelHeight
+end
+
+--// Object classes
+local Window = {}
+Window.__index = Window
+
+local Tab = {}
+Tab.__index = Tab
+
+local Section = {}
+Section.__index = Section
+
+--// singleton instance (exported)
+local singleton = setmetatable({
+    _themeName = "GlassDark",
+    _theme = cloneTheme(Themes.GlassDark),
+    _iconProvider = defaultIconProvider,
+    _windows = {},
+}, EzHub)
+
+--// EzHub API: Themes & Icons
 function EzHub:SetTheme(nameOrTable)
     if type(nameOrTable) == "string" then
         local base = Themes[nameOrTable]
@@ -179,7 +282,7 @@ function EzHub:SetTheme(nameOrTable)
             self._themeName = nameOrTable
             self._theme = cloneTheme(base)
         else
-            warn("[EzHub] Unknown theme: ", nameOrTable)
+            warn("[EzHub] Unknown theme:", nameOrTable)
         end
     elseif type(nameOrTable) == "table" then
         self._themeName = "Custom"
@@ -191,107 +294,24 @@ function EzHub:RegisterTheme(name, def)
     Themes[name] = def
 end
 
+function EzHub:GetTheme()
+    return self._theme
+end
+
 function EzHub:SetIconProvider(fn)
     if type(fn) == "function" then
         self._iconProvider = fn
     end
 end
 
-function EzHub:GetTheme()
-    return self._theme
-end
-
---// Objects
-local Window = {}
-Window.__index = Window
-
-local Tab = {}
-Tab.__index = Tab
-
-local Section = {}
-Section.__index = Section
-
---// Create player profile panel (bottom-left)
-local function createProfilePanel(parent, theme)
-    local panelHeight = 70
-
-    local profileFrame = create("Frame", {
-        Parent = parent,
-        AnchorPoint = Vector2.new(0, 1),
-        Position = UDim2.new(0, 8, 1, -8),
-        Size = UDim2.new(1, -16, 0, panelHeight),
-        BackgroundColor3 = theme.Panel,
-        BorderSizePixel = 0,
-    })
-
-    create("UICorner", {
-        Parent = profileFrame,
-        CornerRadius = UDim.new(0, 10),
-    })
-
-    create("UIStroke", {
-        Parent = profileFrame,
-        Color = theme.Stroke,
-        Transparency = 0.6,
-    })
-
-    local avatar = create("ImageLabel", {
-        Parent = profileFrame,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(0, 48, 0, 48),
-        Position = UDim2.new(0, 10, 0.5, -24),
-        Image = "",
-        ImageColor3 = Color3.new(1, 1, 1),
-    })
-
-    create("UICorner", {
-        Parent = avatar,
-        CornerRadius = UDim.new(1, 0),
-    })
-
-    local nameLabel = create("TextLabel", {
-        Parent = profileFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 68, 0, 12),
-        Size = UDim2.new(1, -76, 0, 18),
-        Font = Enum.Font.GothamBold,
-        Text = LOCAL_PLAYER.Name,
-        TextColor3 = theme.Text,
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left,
-    })
-
-    local subLabel = create("TextLabel", {
-        Parent = profileFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 68, 0, 30),
-        Size = UDim2.new(1, -76, 0, 16),
-        Font = Enum.Font.Gotham,
-        Text = "Player ID: " .. LOCAL_PLAYER.UserId,
-        TextColor3 = theme.TextMuted,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left,
-    })
-
-    -- thumbnail
-    task.spawn(function()
-        local success, content = pcall(function()
-            local thumb, _ = Players:GetUserThumbnailAsync(
-                LOCAL_PLAYER.UserId,
-                Enum.ThumbnailType.HeadShot,
-                Enum.ThumbnailSize.Size100x100
-            )
-            return thumb
-        end)
-        if success and content then
-            avatar.Image = content
-        end
-    end)
-
-    return profileFrame, panelHeight
-end
-
---// Create window
+--// EzHub:CreateWindow
+-- opts:
+--   Title        - główny tytuł UI (np. EzHub)
+--   SubTitle     - opis, np. "Modern Script Hub"
+--   GameName     - nazwa gry, pojawi się jako badge
+--   CreatorName  - autor UI / huba
+--   AppIcon      - nazwa lucide lub rbxassetid://...
+--   Theme        - GlassDark / GlassLight / Neon / ...
 function EzHub:CreateWindow(opts)
     opts = opts or {}
     if opts.Theme then
@@ -305,16 +325,12 @@ function EzHub:CreateWindow(opts)
         Parent = gui,
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(0, 680, 0, 380),
+        Size = UDim2.new(0, 700, 0, 390),
         BackgroundColor3 = theme.Background,
         BorderSizePixel = 0,
     })
 
-    create("UICorner", {
-        Parent = main,
-        CornerRadius = UDim.new(0, 16),
-    })
-
+    create("UICorner", {Parent = main, CornerRadius = UDim.new(0, 18)})
     create("UIStroke", {
         Parent = main,
         Color = theme.Stroke,
@@ -330,29 +346,104 @@ function EzHub:CreateWindow(opts)
         })
     end
 
+    -- dekoracyjna poświata na dole
+    local glow = create("Frame", {
+        Parent = main,
+        BackgroundColor3 = theme.Accent2,
+        BackgroundTransparency = 0.8,
+        AnchorPoint = Vector2.new(0.5, 1),
+        Position = UDim2.new(0.5, 0, 1, 16),
+        Size = UDim2.new(0.6, 0, 0, 40),
+        BorderSizePixel = 0,
+    })
+    create("UICorner", {Parent = glow, CornerRadius = UDim.new(1, 0)})
+
+    -- top bar z ikoną, grą, creatorem
     local topBar = create("Frame", {
         Parent = main,
         BackgroundColor3 = theme.Panel,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 44),
+        Size = UDim2.new(1, 0, 0, 52),
     })
 
-    create("UICorner", {
-        Parent = topBar,
-        CornerRadius = UDim.new(0, 16),
-    })
-
+    create("UICorner", {Parent = topBar, CornerRadius = UDim.new(0, 18)})
     create("UIStroke", {
         Parent = topBar,
         Color = theme.Stroke,
         Transparency = 0.5,
     })
 
-    local titleLabel = create("TextLabel", {
+    local topLayout = create("UIListLayout", {
+        Parent = topBar,
+        FillDirection = Enum.FillDirection.Horizontal,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        Padding = UDim.new(0, 8),
+    })
+
+    local iconProvider = self._iconProvider
+    local appIconId = ""
+    if typeof(opts.AppIcon) == "string" then
+        if opts.AppIcon:match("^rbxassetid://") then
+            appIconId = opts.AppIcon
+        else
+            appIconId = iconProvider(opts.AppIcon) or ""
+        end
+    end
+
+    if appIconId ~= "" then
+        local iconHolder = create("Frame", {
+            Parent = topBar,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 40, 0, 40),
+        })
+
+        local iconBg = create("Frame", {
+            Parent = iconHolder,
+            BackgroundColor3 = theme.Panel2,
+            BorderSizePixel = 0,
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(0, 36, 0, 36),
+        })
+
+        create("UICorner", {Parent = iconBg, CornerRadius = UDim.new(1, 0)})
+        create("UIStroke", {
+            Parent = iconBg,
+            Color = theme.Stroke,
+            Transparency = 0.4,
+        })
+
+        local img = create("ImageLabel", {
+            Parent = iconBg,
+            BackgroundTransparency = 1,
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(0, 24, 0, 24),
+            Image = appIconId,
+            ImageColor3 = theme.Accent,
+        })
+    end
+
+    local titleHolder = create("Frame", {
         Parent = topBar,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 18, 0, 4),
-        Size = UDim2.new(1, -120, 0, 22),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, -210, 0, 0),
+    })
+
+    local titleLayout = create("UIListLayout", {
+        Parent = titleHolder,
+        FillDirection = Enum.FillDirection.Vertical,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 2),
+    })
+
+    local titleLabel = create("TextLabel", {
+        Parent = titleHolder,
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, 0, 0, 0),
         Font = Enum.Font.GothamBold,
         Text = opts.Title or "EzHub",
         TextColor3 = theme.Text,
@@ -360,24 +451,63 @@ function EzHub:CreateWindow(opts)
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
+    local subLine = string.format(
+        "%s%s%s",
+        opts.SubTitle or "Modern UI Library",
+        opts.GameName and ("  •  " .. tostring(opts.GameName)) or "",
+        opts.CreatorName and ("  •  by " .. tostring(opts.CreatorName)) or ""
+    )
+
     local subtitleLabel = create("TextLabel", {
-        Parent = topBar,
+        Parent = titleHolder,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 18, 0, 22),
-        Size = UDim2.new(1, -120, 0, 18),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, 0, 0, 0),
         Font = Enum.Font.Gotham,
-        Text = opts.SubTitle or "Modern UI Library",
+        Text = subLine,
         TextColor3 = theme.TextMuted,
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    local closeBtn = create("TextButton", {
+    -- prawy górny róg: badge i przycisk X
+    local rightHolder = create("Frame", {
         Parent = topBar,
-        AnchorPoint = Vector2.new(1, 0.5),
-        Position = UDim2.new(1, -12, 0.5, 0),
-        Size = UDim2.new(0, 28, 0, 26),
         BackgroundTransparency = 1,
+        Size = UDim2.new(0, 160, 1, 0),
+    })
+
+    local rightLayout = create("UIListLayout", {
+        Parent = rightHolder,
+        FillDirection = Enum.FillDirection.Horizontal,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        HorizontalAlignment = Enum.HorizontalAlignment.Right,
+        Padding = UDim.new(0, 8),
+    })
+
+    local gameBadge = create("TextLabel", {
+        Parent = rightHolder,
+        BackgroundColor3 = theme.Panel2,
+        AutomaticSize = Enum.AutomaticSize.XY,
+        Size = UDim2.new(0, 0, 0, 22),
+        Font = Enum.Font.Gotham,
+        Text = opts.GameName and ("GAME • " .. tostring(opts.GameName)) or "EzHub UI",
+        TextColor3 = theme.TextMuted,
+        TextSize = 12,
+    })
+
+    create("UICorner", {Parent = gameBadge, CornerRadius = UDim.new(1, 0)})
+    create("UIStroke", {
+        Parent = gameBadge,
+        Color = theme.Stroke,
+        Transparency = 0.5,
+    })
+
+    local closeBtn = create("TextButton", {
+        Parent = rightHolder,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, 26, 0, 26),
         Font = Enum.Font.GothamBold,
         Text = "×",
         TextColor3 = theme.TextMuted,
@@ -396,12 +526,13 @@ function EzHub:CreateWindow(opts)
         main.Visible = false
     end)
 
+    -- left panel with tabs + profile
     local leftPanel = create("Frame", {
         Parent = main,
         BackgroundColor3 = theme.Panel,
         BorderSizePixel = 0,
-        Position = UDim2.new(0, 0, 0, 44),
-        Size = UDim2.new(0, 190, 1, -44),
+        Position = UDim2.new(0, 0, 0, 52),
+        Size = UDim2.new(0, 200, 1, -52),
     })
 
     create("UIStroke", {
@@ -434,19 +565,16 @@ function EzHub:CreateWindow(opts)
         tabList.CanvasSize = UDim2.new(0, 0, 0, tabLayout.AbsoluteContentSize.Y + 4)
     end)
 
+    -- right content area
     local content = create("Frame", {
         Parent = main,
         BackgroundColor3 = theme.Panel2,
         BorderSizePixel = 0,
-        Position = UDim2.new(0, 190, 0, 44),
-        Size = UDim2.new(1, -190, 1, -44),
+        Position = UDim2.new(0, 200, 0, 52),
+        Size = UDim2.new(1, -200, 1, -52),
     })
 
-    create("UICorner", {
-        Parent = content,
-        CornerRadius = UDim.new(0, 16),
-    })
-
+    create("UICorner", {Parent = content, CornerRadius = UDim.new(0, 18)})
     create("UIStroke", {
         Parent = content,
         Color = theme.Stroke,
@@ -493,19 +621,19 @@ function Window:CreateTab(name, iconName)
     })
 
     create("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 10)})
-
     create("UIStroke", {
         Parent = btn,
         Color = theme.Stroke,
         Transparency = 0.6,
     })
 
+    local iconImg = iconName and iconProvider(iconName) or ""
     local icon = create("ImageLabel", {
         Parent = btn,
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 10, 0.5, -10),
         Size = UDim2.new(0, 20, 0, 20),
-        Image = iconName and iconProvider(iconName) or "",
+        Image = iconImg,
         ImageColor3 = theme.TextMuted,
     })
 
@@ -621,7 +749,6 @@ function Tab:CreateSection(name)
     })
 
     create("UICorner", {Parent = section, CornerRadius = UDim.new(0, 12)})
-
     create("UIStroke", {
         Parent = section,
         Color = theme.Stroke,
@@ -636,14 +763,14 @@ function Tab:CreateSection(name)
         PaddingRight = UDim.new(0, 12),
     })
 
-    local layout = create("UIListLayout", {
+    create("UIListLayout", {
         Parent = section,
         FillDirection = Enum.FillDirection.Vertical,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 8),
     })
 
-    local title = create("TextLabel", {
+    create("TextLabel", {
         Parent = section,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
@@ -665,7 +792,6 @@ function Tab:CreateSection(name)
     return sectionObj
 end
 
--- sekcja domyślna
 function Tab:_getDefaultSection()
     if not self._defaultSection then
         self._defaultSection = self:CreateSection(self._name)
@@ -678,7 +804,7 @@ function Tab:CreateToggle(opts)   return self:_getDefaultSection():CreateToggle(
 function Tab:CreateSlider(opts)   return self:_getDefaultSection():CreateSlider(opts)   end
 function Tab:CreateDropdown(opts) return self:_getDefaultSection():CreateDropdown(opts) end
 
---// Section controls (używają AutomaticSize => brak bugów)
+--// Section controls
 
 function Section:CreateButton(opts)
     opts = opts or {}
@@ -720,17 +846,15 @@ function Section:CreateButton(opts)
         Size = UDim2.new(1, -40, 0, 0),
     })
 
-    local leftLayout = create("UIListLayout", {
+    create("UIListLayout", {
         Parent = leftCol,
         FillDirection = Enum.FillDirection.Vertical,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 2),
         HorizontalAlignment = Enum.HorizontalAlignment.Left,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
     })
 
     local iconId = opts.Icon and singleton._iconProvider(opts.Icon) or ""
-
     if iconId ~= "" then
         local icon = create("ImageLabel", {
             Parent = leftCol,
@@ -742,7 +866,7 @@ function Section:CreateButton(opts)
         icon.LayoutOrder = -1
     end
 
-    local title = create("TextLabel", {
+    create("TextLabel", {
         Parent = leftCol,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
@@ -754,7 +878,7 @@ function Section:CreateButton(opts)
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    local subtitle = create("TextLabel", {
+    create("TextLabel", {
         Parent = leftCol,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
@@ -820,7 +944,7 @@ function Section:CreateToggle(opts)
         PaddingRight = UDim.new(0, 10),
     })
 
-    local layout = create("UIListLayout", {
+    create("UIListLayout", {
         Parent = holder,
         FillDirection = Enum.FillDirection.Horizontal,
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -835,7 +959,7 @@ function Section:CreateToggle(opts)
         Size = UDim2.new(1, -60, 0, 0),
     })
 
-    local leftLayout = create("UIListLayout", {
+    create("UIListLayout", {
         Parent = leftCol,
         FillDirection = Enum.FillDirection.Vertical,
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -843,7 +967,7 @@ function Section:CreateToggle(opts)
         HorizontalAlignment = Enum.HorizontalAlignment.Left,
     })
 
-    local title = create("TextLabel", {
+    create("TextLabel", {
         Parent = leftCol,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
@@ -855,7 +979,7 @@ function Section:CreateToggle(opts)
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    local subtitle = create("TextLabel", {
+    create("TextLabel", {
         Parent = leftCol,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
@@ -892,7 +1016,6 @@ function Section:CreateToggle(opts)
     local state = default
 
     local function apply(animated)
-        local alpha = state and 1 or 0
         local pos = state and UDim2.new(1, -20, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
         local bg = state and theme.Success or theme.Panel
 
@@ -950,7 +1073,7 @@ function Section:CreateSlider(opts)
         PaddingRight = UDim.new(0, 10),
     })
 
-    local layout = create("UIListLayout", {
+    create("UIListLayout", {
         Parent = holder,
         FillDirection = Enum.FillDirection.Vertical,
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -964,14 +1087,14 @@ function Section:CreateSlider(opts)
         Size = UDim2.new(1, 0, 0, 0),
     })
 
-    local headerLayout = create("UIListLayout", {
+    create("UIListLayout", {
         Parent = header,
         FillDirection = Enum.FillDirection.Horizontal,
         SortOrder = Enum.SortOrder.LayoutOrder,
         VerticalAlignment = Enum.VerticalAlignment.Center,
     })
 
-    local nameLabel = create("TextLabel", {
+    create("TextLabel", {
         Parent = header,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
@@ -1103,7 +1226,7 @@ function Section:CreateDropdown(opts)
         PaddingRight = UDim.new(0, 10),
     })
 
-    local layout = create("UIListLayout", {
+    create("UIListLayout", {
         Parent = holder,
         FillDirection = Enum.FillDirection.Vertical,
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -1117,14 +1240,14 @@ function Section:CreateDropdown(opts)
         Size = UDim2.new(1, 0, 0, 0),
     })
 
-    local headerLayout = create("UIListLayout", {
+    create("UIListLayout", {
         Parent = header,
         FillDirection = Enum.FillDirection.Horizontal,
         SortOrder = Enum.SortOrder.LayoutOrder,
         VerticalAlignment = Enum.VerticalAlignment.Center,
     })
 
-    local nameLabel = create("TextLabel", {
+    create("TextLabel", {
         Parent = header,
         BackgroundTransparency = 1,
         AutomaticSize = Enum.AutomaticSize.Y,
@@ -1188,7 +1311,9 @@ function Section:CreateDropdown(opts)
     end
 
     local function buildList()
-        for _, b in ipairs(buttons) do b:Destroy() end
+        for _, b in ipairs(buttons) do
+            b:Destroy()
+        end
         table.clear(buttons)
 
         for _, v in ipairs(values) do
@@ -1244,4 +1369,166 @@ function Section:CreateDropdown(opts)
     }
 end
 
+--// Notifications
+-- EzHub:Notify({
+--   Title = "Title",
+--   Description = "Text",
+--   Icon = "zap" lub "rbxassetid://...",
+--   Type = "Info" / "Success" / "Error",
+--   Duration = 4
+-- })
+function EzHub:Notify(opts)
+    opts = opts or {}
+    local theme = self._theme
+    local root = getNotificationRoot()
+
+    local title = opts.Title or "Notification"
+    local desc = opts.Description or ""
+    local duration = tonumber(opts.Duration) or 4
+    local ntype = (opts.Type or "Info"):lower()
+
+    local stripeColor = theme.Accent
+    if ntype == "success" then
+        stripeColor = theme.Success
+    elseif ntype == "error" or ntype == "danger" then
+        stripeColor = theme.Danger
+    end
+
+    local iconId = ""
+    if typeof(opts.Icon) == "string" then
+        if opts.Icon:match("^rbxassetid://") then
+            iconId = opts.Icon
+        else
+            iconId = self._iconProvider(opts.Icon) or ""
+        end
+    end
+
+    local base = create("Frame", {
+        Parent = root,
+        BackgroundColor3 = theme.Panel2,
+        BorderSizePixel = 0,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, 0, 0, 0),
+        BackgroundTransparency = 0.05,
+    })
+
+    create("UICorner", {Parent = base, CornerRadius = UDim.new(0, 14)})
+    create("UIStroke", {
+        Parent = base,
+        Color = theme.Stroke,
+        Transparency = 0.4,
+    })
+
+    create("UIGradient", {
+        Parent = base,
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, theme.Panel2),
+            ColorSequenceKeypoint.new(1, theme.Panel),
+        }),
+        Rotation = 90,
+    })
+
+    local stripe = create("Frame", {
+        Parent = base,
+        BackgroundColor3 = stripeColor,
+        BorderSizePixel = 0,
+        AnchorPoint = Vector2.new(0, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(0, 4, 1, 0),
+    })
+    create("UICorner", {Parent = stripe, CornerRadius = UDim.new(0, 14)})
+
+    create("UIPadding", {
+        Parent = base,
+        PaddingTop = UDim.new(0, 10),
+        PaddingBottom = UDim.new(0, 10),
+        PaddingLeft = UDim.new(0, 12),
+        PaddingRight = UDim.new(0, 12),
+    })
+
+    local layout = create("UIListLayout", {
+        Parent = base,
+        FillDirection = Enum.FillDirection.Horizontal,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 8),
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+    })
+
+    if iconId ~= "" then
+        create("ImageLabel", {
+            Parent = base,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 24, 0, 24),
+            Image = iconId,
+            ImageColor3 = stripeColor,
+        })
+    end
+
+    local textHolder = create("Frame", {
+        Parent = base,
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, -40, 0, 0),
+    })
+
+    create("UIListLayout", {
+        Parent = textHolder,
+        FillDirection = Enum.FillDirection.Vertical,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 2),
+        HorizontalAlignment = Enum.HorizontalAlignment.Left,
+    })
+
+    create("TextLabel", {
+        Parent = textHolder,
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, 0, 0, 0),
+        Font = Enum.Font.GothamBold,
+        Text = title,
+        TextColor3 = theme.Text,
+        TextSize = 15,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+
+    create("TextLabel", {
+        Parent = textHolder,
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Size = UDim2.new(1, 0, 0, 0),
+        Font = Enum.Font.Gotham,
+        Text = desc,
+        TextColor3 = theme.TextMuted,
+        TextSize = 13,
+        TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+
+    -- wejście
+    base.BackgroundTransparency = 1
+    base.Position = UDim2.new(0, 40, 0, 0)
+    stripe.Size = UDim2.new(0, 0, 1, 0)
+
+    tween(base, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundTransparency = 0.05,
+        Position = UDim2.new(0, 0, 0, 0),
+    })
+    tween(stripe, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 4, 1, 0),
+    })
+
+    task.spawn(function()
+        task.wait(duration)
+        tween(base, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 40, 0, 0),
+        })
+        task.wait(0.22)
+        if base and base.Parent then
+            base:Destroy()
+        end
+    end)
+end
+
+-- export singleton
 return singleton
